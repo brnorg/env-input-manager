@@ -1,0 +1,61 @@
+
+name: Update Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      pat:
+        description: 'Personal Access Token'
+        required: true
+      repository:
+        description: 'Repository name (owner/repo)'
+        required: true
+      structure:
+        description: 'Environment structure'
+        required: true
+
+jobs:
+  update-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PAT and Repository Access
+        run: |
+          # Validar o PAT tentando obter informações do usuário
+          USER_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ github.event.inputs.pat }}" \
+            https://api.github.com/user)
+          
+          if echo "$USER_RESPONSE" | grep -q "Bad credentials"; then
+            echo "Error: Invalid PAT provided"
+            exit 1
+          fi
+          
+          # Validar acesso ao repositório
+          REPO_RESPONSE=$(curl -s -H "Authorization: Bearer ${{ github.event.inputs.pat }}" \
+            https://api.github.com/repos/${{ github.event.inputs.repository }})
+          
+          if echo "$REPO_RESPONSE" | grep -q "Not Found"; then
+            echo "Error: Repository not found or no access"
+            exit 1
+          fi
+          
+          echo "PAT and repository access validated successfully"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.event.inputs.pat }}
+
+      - name: Process Environment Structure
+        run: |
+          echo '${{ github.event.inputs.structure }}' > environment.json
+          
+          echo "Received structure:"
+          cat environment.json
+
+      - name: Commit and Push
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add environment.json
+          git commit -m "Update environment configuration"
+          git push
