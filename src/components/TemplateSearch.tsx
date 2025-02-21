@@ -26,7 +26,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const response = await fetch('YOUR_TEMPLATES_ENDPOINT_HERE');
+        const response = await fetch('/templates.json');
         if (!response.ok) throw new Error('Failed to fetch templates');
         const data = await response.json();
         setTemplates(data);
@@ -49,7 +49,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'environment-template.json';
+    a.download = 'templates.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
