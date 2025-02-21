@@ -24,11 +24,26 @@ interface Template {
   };
 }
 
+interface GitHubUser {
+  login: string;
+  name: string;
+  avatar_url: string;
+}
+
+interface APIResponse {
+  statusCode: number;
+  body: any;
+}
+
 const EnvironmentManager = () => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [newEnvName, setNewEnvName] = useState('');
   const [showSecrets, setShowSecrets] = useState<{ [key: string]: boolean }>({});
   const [pat, setPat] = useState('');
+  const [repository, setRepository] = useState('');
+  const [githubUser, setGithubUser] = useState<GitHubUser | null>(null);
+  const [hasRepoAccess, setHasRepoAccess] = useState<boolean | null>(null);
+  const [apiResponse, setApiResponse] = useState<APIResponse | null>(null);
 
   const addEnvironment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +160,16 @@ const EnvironmentManager = () => {
       return;
     }
 
+    if (!repository) {
+      toast.error('Please enter a GitHub repository');
+      return;
+    }
+
+    if (hasRepoAccess !== true) {
+      toast.error('Please verify repository access first');
+      return;
+    }
+
     try {
       const response = await fetch('YOUR_FIXED_ENDPOINT_HERE', {
         method: 'POST',
@@ -152,7 +177,17 @@ const EnvironmentManager = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${pat}`
         },
-        body: JSON.stringify(generateCurrentStructure())
+        body: JSON.stringify({
+          ...generateCurrentStructure(),
+          repository
+        })
+      });
+
+      const responseData = await response.json();
+      
+      setApiResponse({
+        statusCode: response.status,
+        body: responseData
       });
 
       if (!response.ok) throw new Error('Failed to send data');
@@ -161,6 +196,67 @@ const EnvironmentManager = () => {
     } catch (error) {
       toast.error('Failed to send data');
       console.error('Error sending data:', error);
+    }
+  };
+
+  const validateGitHubPAT = async () => {
+    if (!pat) return;
+
+    try {
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!userResponse.ok) {
+        toast.error('Invalid Personal Access Token');
+        setGithubUser(null);
+        setHasRepoAccess(null);
+        return;
+      }
+
+      const userData = await userResponse.json();
+      setGithubUser({
+        login: userData.login,
+        name: userData.name,
+        avatar_url: userData.avatar_url
+      });
+
+      if (repository) {
+        await checkRepositoryAccess();
+      }
+    } catch (error) {
+      toast.error('Failed to validate GitHub token');
+      console.error('Error validating GitHub token:', error);
+    }
+  };
+
+  const checkRepositoryAccess = async () => {
+    if (!pat || !repository) return;
+
+    try {
+      const [owner, repo] = repository.split('/');
+      const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      const hasAccess = repoResponse.ok;
+      setHasRepoAccess(hasAccess);
+      
+      if (!hasAccess) {
+        toast.error('No access to this repository');
+      } else {
+        toast.success('Repository access verified');
+      }
+    } catch (error) {
+      setHasRepoAccess(false);
+      toast.error('Failed to verify repository access');
+      console.error('Error checking repository access:', error);
     }
   };
 
@@ -175,17 +271,51 @@ const EnvironmentManager = () => {
             currentStructure={generateTemplateStructure()}
           />
           
-          <div className="flex gap-4 w-full max-w-md">
-            <input
-              type="password"
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-              placeholder="Enter Personal Access Token (PAT)"
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-            />
+          <div className="grid gap-4 w-full max-w-md">
+            <div className="flex flex-col gap-2">
+              <input
+                type="password"
+                value={pat}
+                onChange={(e) => setPat(e.target.value)}
+                onBlur={validateGitHubPAT}
+                placeholder="Enter Personal Access Token (PAT)"
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
+              />
+              {githubUser && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <img src={githubUser.avatar_url} alt={githubUser.login} className="w-5 h-5 rounded-full" />
+                  <span>{githubUser.name || githubUser.login}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                value={repository}
+                onChange={(e) => setRepository(e.target.value)}
+                onBlur={checkRepositoryAccess}
+                placeholder="GitHub Repository (owner/repo)"
+                className={`w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 transition-all ${
+                  hasRepoAccess === true 
+                    ? 'border-green-200 focus:ring-green-200' 
+                    : hasRepoAccess === false 
+                    ? 'border-red-200 focus:ring-red-200'
+                    : 'border-gray-200 focus:ring-gray-200'
+                }`}
+              />
+              {hasRepoAccess === true && (
+                <span className="text-sm text-green-600">Repository access verified</span>
+              )}
+              {hasRepoAccess === false && (
+                <span className="text-sm text-red-600">No access to this repository</span>
+              )}
+            </div>
+
             <button
               onClick={sendData}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center gap-2"
+              disabled={!pat || !repository || hasRepoAccess !== true}
+              className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send size={20} /> Send
             </button>
@@ -325,6 +455,20 @@ const EnvironmentManager = () => {
         {environments.length === 0 && (
           <div className="text-center text-gray-500 mt-12 animate-fade-in">
             <p className="text-lg">No environments yet. Add one to get started!</p>
+          </div>
+        )}
+
+        {apiResponse && (
+          <div className="mt-8 max-w-6xl mx-auto">
+            <div className="bg-gray-900 text-white p-6 rounded-xl">
+              <h3 className="text-lg font-medium mb-4">API Response</h3>
+              <div className="grid gap-2">
+                <p>Status Code: {apiResponse.statusCode}</p>
+                <pre className="overflow-auto">
+                  {JSON.stringify(apiResponse.body, null, 2)}
+                </pre>
+              </div>
+            </div>
           </div>
         )}
       </div>
