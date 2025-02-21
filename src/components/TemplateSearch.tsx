@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Template {
   name: string;
@@ -23,11 +24,19 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
   const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
-    // Em um ambiente real, você precisaria implementar um backend
-    // para ler os arquivos do diretório /templates
-    // Por enquanto, deixaremos um comentário indicando onde os templates devem estar
-    console.log('Templates should be placed in the /templates directory at the root of the project');
-    setTemplates([]);
+    const fetchTemplates = async () => {
+      try {
+        const response = await fetch('YOUR_TEMPLATES_ENDPOINT_HERE');
+        if (!response.ok) throw new Error('Failed to fetch templates');
+        const data = await response.json();
+        setTemplates(data);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        toast.error('Failed to load templates');
+      }
+    };
+
+    fetchTemplates();
   }, []);
 
   const filteredTemplates = templates.filter(template => 
@@ -40,7 +49,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'templates/environment-template.json';
+    a.download = 'environment-template.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -55,7 +64,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onFocus={() => setShowTemplates(true)}
-          placeholder="Search templates in /templates directory..."
+          placeholder="Search templates..."
           className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
         />
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -76,7 +85,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
             </button>
           ))}
           {filteredTemplates.length === 0 && (
-            <div className="px-4 py-2 text-gray-500">No templates found in /templates directory</div>
+            <div className="px-4 py-2 text-gray-500">No templates found</div>
           )}
         </div>
       )}
