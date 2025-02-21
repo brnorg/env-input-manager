@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 
@@ -23,27 +22,25 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
   const [showTemplates, setShowTemplates] = useState(false);
 
   useEffect(() => {
-    // In a real app, this would load from your storage
-    const savedTemplates = localStorage.getItem('env-templates');
-    if (savedTemplates) {
-      setTemplates(JSON.parse(savedTemplates));
-    }
+    setTemplates([]);
   }, []);
-
-  const saveCurrentAsTemplate = (name: string) => {
-    const newTemplate: Template = {
-      name,
-      structure: currentStructure
-    };
-    
-    const updatedTemplates = [...templates, newTemplate];
-    setTemplates(updatedTemplates);
-    localStorage.setItem('env-templates', JSON.stringify(updatedTemplates));
-  };
 
   const filteredTemplates = templates.filter(template => 
     template.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const downloadTemplate = () => {
+    const templateStr = JSON.stringify(currentStructure, null, 2);
+    const blob = new Blob([templateStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'environment-template.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="relative w-full max-w-md">

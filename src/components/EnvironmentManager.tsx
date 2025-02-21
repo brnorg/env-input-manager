@@ -28,7 +28,7 @@ const EnvironmentManager = () => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [newEnvName, setNewEnvName] = useState('');
   const [showSecrets, setShowSecrets] = useState<{ [key: string]: boolean }>({});
-  const [apiUrl, setApiUrl] = useState('');
+  const [pat, setPat] = useState('');
 
   const addEnvironment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,18 +107,18 @@ const EnvironmentManager = () => {
     return current;
   };
 
-  const saveTemplate = () => {
-    const templateName = prompt('Enter template name:');
-    if (!templateName) return;
-
-    const template: Template = {
-      name: templateName,
-      structure: generateTemplateStructure()
-    };
-
-    const savedTemplates = JSON.parse(localStorage.getItem('env-templates') || '[]');
-    localStorage.setItem('env-templates', JSON.stringify([...savedTemplates, template]));
-    toast.success('Template saved successfully');
+  const downloadTemplate = () => {
+    const templateStr = JSON.stringify(generateTemplateStructure(), null, 2);
+    const blob = new Blob([templateStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'environment-template.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Template downloaded successfully');
   };
 
   const applyTemplate = (template: Template) => {
@@ -140,16 +140,17 @@ const EnvironmentManager = () => {
   };
 
   const sendData = async () => {
-    if (!apiUrl) {
-      toast.error('Please enter an API URL');
+    if (!pat) {
+      toast.error('Please enter your Personal Access Token');
       return;
     }
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetch('YOUR_FIXED_ENDPOINT_HERE', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${pat}`
         },
         body: JSON.stringify(generateCurrentStructure())
       });
@@ -176,10 +177,10 @@ const EnvironmentManager = () => {
           
           <div className="flex gap-4 w-full max-w-md">
             <input
-              type="url"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              placeholder="Enter API URL"
+              type="password"
+              value={pat}
+              onChange={(e) => setPat(e.target.value)}
+              placeholder="Enter Personal Access Token (PAT)"
               className="flex-1 px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
             />
             <button
@@ -208,10 +209,10 @@ const EnvironmentManager = () => {
           {environments.length > 0 && (
             <button
               type="button"
-              onClick={saveTemplate}
+              onClick={downloadTemplate}
               className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
             >
-              <Save size={20} /> Save Template
+              <Save size={20} /> Download Template
             </button>
           )}
         </form>
