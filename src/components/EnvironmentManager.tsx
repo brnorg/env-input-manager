@@ -140,8 +140,15 @@ const EnvironmentManager = () => {
     const newEnvironments: Environment[] = [];
     
     Object.entries(template.structure).forEach(([envName, envData]) => {
-      const vars: KeyValue[] = Object.keys(envData.vars).map(key => ({ key, value: '' }));
-      const secrets: KeyValue[] = Object.keys(envData.secrets).map(key => ({ key, value: '' }));
+      const vars: KeyValue[] = Object.entries(envData.vars).map(([key, value]) => ({ 
+        key, 
+        value: value || '' 
+      }));
+      
+      const secrets: KeyValue[] = Object.keys(envData.secrets).map(key => ({ 
+        key, 
+        value: '' 
+      }));
       
       newEnvironments.push({
         name: envName,
@@ -171,31 +178,37 @@ const EnvironmentManager = () => {
     }
 
     try {
-      const response = await fetch('YOUR_FIXED_ENDPOINT_HERE', {
+      const [owner, repo] = repository.split('/');
+      
+      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
         method: 'POST',
         headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          'Authorization': `Bearer ${pat}`,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${pat}`
         },
         body: JSON.stringify({
-          ...generateCurrentStructure(),
-          repository
+          event_type: 'update_environment',
+          ref: 'main',
+          inputs: {
+            pat: pat,
+            repository: repository,
+            structure: generateCurrentStructure()
+          }
         })
       });
 
-      const responseData = await response.json();
+      if (!response.ok) throw new Error('Failed to trigger GitHub Action');
       
       setApiResponse({
         statusCode: response.status,
-        body: responseData
+        body: { message: 'GitHub Action triggered successfully' }
       });
 
-      if (!response.ok) throw new Error('Failed to send data');
-      
-      toast.success('Data sent successfully');
+      toast.success('GitHub Action triggered successfully');
     } catch (error) {
-      toast.error('Failed to send data');
-      console.error('Error sending data:', error);
+      toast.error('Failed to trigger GitHub Action');
+      console.error('Error triggering GitHub Action:', error);
     }
   };
 
