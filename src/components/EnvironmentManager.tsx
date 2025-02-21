@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Eye, EyeOff, Save, Send } from 'lucide-react';
+import { Plus, X, Eye, EyeOff, Save, Send, Github } from 'lucide-react';
 import { toast } from 'sonner';
 import TemplateSearch from './TemplateSearch';
 
@@ -276,7 +276,10 @@ const EnvironmentManager = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-light text-gray-900 mb-8 text-center">Environment Manager</h1>
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <Github size={32} />
+          <h1 className="text-4xl font-light text-gray-900 text-center">Github Environment Manager</h1>
+        </div>
         
         <div className="mb-8 flex flex-col gap-4 items-center">
           <TemplateSearch

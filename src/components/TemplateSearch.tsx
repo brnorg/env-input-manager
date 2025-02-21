@@ -26,7 +26,7 @@ const TemplateSearch = ({ onSelectTemplate, currentStructure }: TemplateSearchPr
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
-        const response = await fetch('/templates.json');
+        const response = await fetch('./templates.json');
         if (!response.ok) throw new Error('Failed to fetch templates');
         const data = await response.json();
         setTemplates(data);
