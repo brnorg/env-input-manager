@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, X, Eye, EyeOff, Save, Send, Github } from 'lucide-react';
+import { Plus, X, Eye, EyeOff, Save, Send, Github, List } from 'lucide-react';
 import { toast } from 'sonner';
 import TemplateSearch from './TemplateSearch';
 
@@ -273,6 +273,25 @@ const EnvironmentManager = () => {
     }
   };
 
+  const extractEnvironmentInfo = () => {
+    const info: { [key: string]: { vars: { [key: string]: string }, secretKeys: string[] } } = {};
+    
+    environments.forEach(env => {
+      info[env.name] = {
+        vars: Object.fromEntries(env.vars.map(v => [v.key, v.value])),
+        secretKeys: env.secrets.map(s => s.key)
+      };
+    });
+    
+    return info;
+  };
+
+  const showEnvironmentInfo = () => {
+    const info = extractEnvironmentInfo();
+    toast.info("Informações dos ambientes copiadas para o console");
+    console.log("Environment Information:", JSON.stringify(info, null, 2));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -503,6 +522,17 @@ const EnvironmentManager = () => {
               {JSON.stringify(generateCurrentStructure(), null, 2)}
             </pre>
           </div>
+        </div>
+      )}
+
+      {environments.length > 0 && (
+        <div className="mt-8 max-w-6xl mx-auto">
+          <button
+            onClick={showEnvironmentInfo}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <List size={20} /> Ver Informações dos Ambientes
+          </button>
         </div>
       )}
     </div>
