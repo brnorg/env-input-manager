@@ -127,12 +127,20 @@ export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
     }
 
     const data = await response.json();
+    console.log('Environments response:', data);
     
     // Buscar detalhes de cada ambiente
     const environments = await Promise.all(data.environments.map(async (env: any) => {
+      console.log(`Fetching details for environment: ${env.name}`);
+      
       const variables = await fetchEnvironmentVariables(pat, owner, repo, env.name);
       const secrets = await fetchEnvironmentSecrets(pat, owner, repo, env.name);
       
+      console.log(`Environment ${env.name} details:`, {
+        variablesCount: variables.length,
+        secretsCount: secrets.length
+      });
+
       return {
         ...env,
         variables,
@@ -150,6 +158,7 @@ export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
 
 const fetchEnvironmentVariables = async (pat: string, owner: string, repo: string, envName: string) => {
   try {
+    console.log(`Fetching variables for environment: ${envName}`);
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/variables`,
       {
@@ -161,19 +170,25 @@ const fetchEnvironmentVariables = async (pat: string, owner: string, repo: strin
     );
 
     if (!response.ok) {
+      console.error(`Failed to fetch variables for ${envName}:`, response.status);
+      if (response.status === 404) {
+        return [];
+      }
       throw new Error('Failed to fetch environment variables');
     }
 
     const data = await response.json();
-    return data.variables || [];
+    console.log(`Variables response for ${envName}:`, data);
+    return Array.isArray(data.variables) ? data.variables : [];
   } catch (error) {
-    console.error('Error fetching environment variables:', error);
+    console.error(`Error fetching variables for ${envName}:`, error);
     return [];
   }
 };
 
 const fetchEnvironmentSecrets = async (pat: string, owner: string, repo: string, envName: string) => {
   try {
+    console.log(`Fetching secrets for environment: ${envName}`);
     const response = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/secrets`,
       {
@@ -185,13 +200,19 @@ const fetchEnvironmentSecrets = async (pat: string, owner: string, repo: string,
     );
 
     if (!response.ok) {
+      console.error(`Failed to fetch secrets for ${envName}:`, response.status);
+      if (response.status === 404) {
+        return [];
+      }
       throw new Error('Failed to fetch environment secrets');
     }
 
     const data = await response.json();
-    return data.secrets || [];
+    console.log(`Secrets response for ${envName}:`, data);
+    return Array.isArray(data.secrets) ? data.secrets : [];
   } catch (error) {
-    console.error('Error fetching environment secrets:', error);
+    console.error(`Error fetching secrets for ${envName}:`, error);
     return [];
   }
 };
+
