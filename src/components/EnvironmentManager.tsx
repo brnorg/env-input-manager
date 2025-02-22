@@ -150,7 +150,7 @@ const EnvironmentManager = () => {
         <div className="mb-8 flex flex-col gap-4 items-center">
           <TemplateSearch
             onSelectTemplate={applyTemplate}
-            currentStructure={generateTemplateStructure()}
+            currentStructure={generateTemplateStructure(environments)}
           />
           
           <div className="grid gap-4 w-full max-w-md">
