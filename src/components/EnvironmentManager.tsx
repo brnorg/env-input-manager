@@ -178,7 +178,7 @@ const EnvironmentManager = () => {
             setHasRepoAccess={setHasRepoAccess}
           />
           
-          <div className="flex flex-col gap-2">
+          <div className="w-full max-w-md space-y-2">
             <button
               onClick={handleSendData}
               disabled={!isGitHubActionsEnabled}
@@ -281,3 +281,4 @@ const EnvironmentManager = () => {
 };
 
 export default EnvironmentManager;
+
