@@ -6,7 +6,7 @@ export const generateTemplateStructure = (environments: Environment[]) => {
   
   environments.forEach(env => {
     template[env.name] = {
-      vars: Object.fromEntries(env.vars.map(v => [v.key, ""])),
+      vars: Object.fromEntries(env.vars.map(v => [v.key, v.value])),
       secrets: Object.fromEntries(env.secrets.map(s => [s.key, ""]))
     };
   });
@@ -39,3 +39,4 @@ export const extractEnvironmentInfo = (environments: Environment[]) => {
   
   return info;
 };
+
