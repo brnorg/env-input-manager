@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { GitHubUser } from '../types/environment';
 
@@ -114,7 +115,7 @@ export const sendDataToGitHub = async (
 export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
   try {
     const [owner, repo] = repository.split('/');
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/.github/environment`, {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/environments`, {
       headers: {
         'Authorization': `Bearer ${pat}`,
         'Accept': 'application/vnd.github.v3+json'
