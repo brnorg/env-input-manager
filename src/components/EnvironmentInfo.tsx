@@ -20,35 +20,48 @@ const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => 
         </button>
       </div>
       <div className="grid gap-6">
-        {environmentInfo.environments?.map((env: any) => (
+        {environmentInfo?.environments?.map((env: any) => (
           <div key={env.name} className="border border-gray-100 rounded-lg p-4">
             <h3 className="text-xl font-medium text-gray-800 mb-4">{env.name}</h3>
             
             <div className="grid gap-4">
-              <div>
-                <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {env.variables?.map((variable: any) => (
-                    <div key={variable.name} className="bg-gray-50 p-2 rounded">
-                      <span className="font-medium">{variable.name}</span>
-                    </div>
-                  ))}
+              {env.variables && env.variables.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {env.variables.map((variable: any) => (
+                      <div key={variable.name} className="bg-gray-50 p-2 rounded">
+                        <span className="font-medium">{variable.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
-              <div>
-                <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {env.secrets?.map((secret: any) => (
-                    <div key={secret.name} className="bg-gray-50 p-2 rounded">
-                      <span className="font-medium">{secret.name}</span>
-                    </div>
-                  ))}
+              {env.secrets && env.secrets.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {env.secrets.map((secret: any) => (
+                      <div key={secret.name} className="bg-gray-50 p-2 rounded">
+                        <span className="font-medium">{secret.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {(!env.variables || env.variables.length === 0) && 
+               (!env.secrets || env.secrets.length === 0) && (
+                <p className="text-gray-500">No variables or secrets found for this environment.</p>
+              )}
             </div>
           </div>
         ))}
+
+        {(!environmentInfo?.environments || environmentInfo.environments.length === 0) && (
+          <p className="text-gray-500">No environments found in this repository.</p>
+        )}
       </div>
     </div>
   );
