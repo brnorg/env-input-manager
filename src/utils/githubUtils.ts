@@ -127,10 +127,71 @@ export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
     }
 
     const data = await response.json();
-    return data;
+    
+    // Buscar detalhes de cada ambiente
+    const environments = await Promise.all(data.environments.map(async (env: any) => {
+      const variables = await fetchEnvironmentVariables(pat, owner, repo, env.name);
+      const secrets = await fetchEnvironmentSecrets(pat, owner, repo, env.name);
+      
+      return {
+        ...env,
+        variables,
+        secrets
+      };
+    }));
+
+    return { ...data, environments };
   } catch (error) {
     toast.error('Failed to fetch environment information');
     console.error('Error fetching environment information:', error);
     return null;
+  }
+};
+
+const fetchEnvironmentVariables = async (pat: string, owner: string, repo: string, envName: string) => {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/variables`,
+      {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch environment variables');
+    }
+
+    const data = await response.json();
+    return data.variables || [];
+  } catch (error) {
+    console.error('Error fetching environment variables:', error);
+    return [];
+  }
+};
+
+const fetchEnvironmentSecrets = async (pat: string, owner: string, repo: string, envName: string) => {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/secrets`,
+      {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch environment secrets');
+    }
+
+    const data = await response.json();
+    return data.secrets || [];
+  } catch (error) {
+    console.error('Error fetching environment secrets:', error);
+    return [];
   }
 };

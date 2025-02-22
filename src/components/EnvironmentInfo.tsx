@@ -28,10 +28,13 @@ const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => 
               {env.variables && env.variables.length > 0 && (
                 <div>
                   <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2">
                     {env.variables.map((variable: any) => (
-                      <div key={variable.name} className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{variable.name}</span>
+                      <div key={variable.name} className="bg-gray-50 p-3 rounded">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-700">{variable.name}</span>
+                          <span className="text-gray-600">{variable.value}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -41,10 +44,13 @@ const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => 
               {env.secrets && env.secrets.length > 0 && (
                 <div>
                   <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-2">
                     {env.secrets.map((secret: any) => (
-                      <div key={secret.name} className="bg-gray-50 p-2 rounded">
-                        <span className="font-medium">{secret.name}</span>
+                      <div key={secret.name} className="bg-gray-50 p-3 rounded">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-gray-700">{secret.name}</span>
+                          <span className="text-gray-500 text-sm italic">Protected</span>
+                        </div>
                       </div>
                     ))}
                   </div>
