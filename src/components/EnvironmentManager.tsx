@@ -15,6 +15,8 @@ const EnvironmentManager = () => {
   const [githubUser, setGithubUser] = useState<GitHubUser | null>(null);
   const [hasRepoAccess, setHasRepoAccess] = useState<boolean | null>(null);
   const [apiResponse, setApiResponse] = useState<APIResponse | null>(null);
+  const [environmentInfo, setEnvironmentInfo] = useState<any>(null);
+  const [showEnvironmentInfo, setShowEnvironmentInfo] = useState(false);
 
   const addEnvironment = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +135,7 @@ const EnvironmentManager = () => {
     await sendDataToGitHub(pat, repository, generateCurrentStructure(environments), setApiResponse);
   };
 
-  const showEnvironmentInfo = async () => {
+  const fetchEnvironmentInfoHandler = async () => {
     if (!pat || !repository) {
       toast.error('Please enter your Personal Access Token and GitHub repository');
       return;
@@ -142,8 +144,9 @@ const EnvironmentManager = () => {
     try {
       const repoInfo = await fetchEnvironmentInfo(pat, repository);
       if (repoInfo) {
+        setEnvironmentInfo(repoInfo);
+        setShowEnvironmentInfo(true);
         toast.success("Environment information fetched successfully");
-        console.log("Repository Environment Information:", repoInfo);
       }
     } catch (error) {
       toast.error('Failed to fetch environment information');
@@ -219,7 +222,7 @@ const EnvironmentManager = () => {
               
               {isGitHubActionsEnabled && (
                 <button
-                  onClick={showEnvironmentInfo}
+                  onClick={fetchEnvironmentInfoHandler}
                   className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2"
                 >
                   <List size={20} /> Ver Informações dos Ambientes
@@ -253,6 +256,51 @@ const EnvironmentManager = () => {
             </button>
           )}
         </form>
+
+        {showEnvironmentInfo && environmentInfo && (
+          <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-medium text-gray-900">Repository Environments</h2>
+              <button
+                onClick={() => setShowEnvironmentInfo(false)}
+                className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="grid gap-6">
+              {environmentInfo.environments?.map((env: any) => (
+                <div key={env.name} className="border border-gray-100 rounded-lg p-4">
+                  <h3 className="text-xl font-medium text-gray-800 mb-4">{env.name}</h3>
+                  
+                  <div className="grid gap-4">
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {env.variables?.map((variable: any) => (
+                          <div key={variable.name} className="bg-gray-50 p-2 rounded">
+                            <span className="font-medium">{variable.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        {env.secrets?.map((secret: any) => (
+                          <div key={secret.name} className="bg-gray-50 p-2 rounded">
+                            <span className="font-medium">{secret.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-8 animate-fade-in">
           {environments.map((env, envIndex) => (
@@ -400,7 +448,7 @@ const EnvironmentManager = () => {
       {environments.length > 0 && (
         <div className="mt-8 max-w-6xl mx-auto">
           <button
-            onClick={showEnvironmentInfo}
+            onClick={showEnvironmentInfoHandler}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <List size={20} /> Ver Informações dos Ambientes
