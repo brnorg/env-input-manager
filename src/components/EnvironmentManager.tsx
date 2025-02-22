@@ -430,25 +430,8 @@ const EnvironmentManager = () => {
 
       {environments.length > 0 && (
         <div className="mt-8 max-w-6xl mx-auto">
-          <div className="bg-gray-900 text-white p-6 rounded-xl">
-            <h3 className="text-lg font-medium mb-4">Generated Template Structure</h3>
-            <pre className="overflow-auto">
-              {JSON.stringify(generateTemplateStructure(environments), null, 2)}
-            </pre>
-          </div>
-          <div className="bg-gray-900 text-white p-6 rounded-xl mt-4">
-            <h3 className="text-lg font-medium mb-4">Current Data Structure</h3>
-            <pre className="overflow-auto">
-              {JSON.stringify(generateCurrentStructure(environments), null, 2)}
-            </pre>
-          </div>
-        </div>
-      )}
-
-      {environments.length > 0 && (
-        <div className="mt-8 max-w-6xl mx-auto">
           <button
-            onClick={showEnvironmentInfoHandler}
+            onClick={fetchEnvironmentInfoHandler}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <List size={20} /> Ver Informações dos Ambientes
