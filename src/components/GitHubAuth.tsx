@@ -37,7 +37,7 @@ const GitHubAuth = ({
   return (
     <div className="mb-8 flex flex-col gap-4 items-center">
       <div className="flex flex-col gap-4 w-full max-w-md">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full">
           <input
             type="password"
             value={pat}
@@ -54,7 +54,7 @@ const GitHubAuth = ({
           )}
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 w-full">
           <input
             type="text"
             value={repository}
