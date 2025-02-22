@@ -5,10 +5,38 @@
     "structure": {
       "development": {
         "vars": {
-          "API_URL": "https://api.example.com"
+          "API_URL": "https://api.example.com",
+          "APP_NAME": "My App",
+          "DEBUG_MODE": "true"
         },
         "secrets": {
-          "API_KEY": ""
+          "API_KEY": "",
+          "DATABASE_URL": "",
+          "JWT_SECRET": ""
+        }
+      },
+      "staging": {
+        "vars": {
+          "API_URL": "https://staging-api.example.com",
+          "APP_NAME": "My App (Staging)",
+          "DEBUG_MODE": "false"
+        },
+        "secrets": {
+          "API_KEY": "",
+          "DATABASE_URL": "",
+          "JWT_SECRET": ""
+        }
+      },
+      "production": {
+        "vars": {
+          "API_URL": "https://production-api.example.com",
+          "APP_NAME": "My App (Production)",
+          "DEBUG_MODE": "false"
+        },
+        "secrets": {
+          "API_KEY": "",
+          "DATABASE_URL": "",
+          "JWT_SECRET": ""
         }
       }
     }
