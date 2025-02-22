@@ -151,6 +151,8 @@ const EnvironmentManager = () => {
     }
   };
 
+  const isGitHubActionsEnabled = pat && repository && hasRepoAccess === true;
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -206,22 +208,24 @@ const EnvironmentManager = () => {
               )}
             </div>
 
-            <button
-              onClick={handleSendData}
-              disabled={!pat || !repository || hasRepoAccess !== true}
-              className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send size={20} /> Send
-            </button>
-            
-            {environments.length > 0 && (
+            <div className="flex flex-col gap-2">
               <button
-                onClick={showEnvironmentInfo}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2"
+                onClick={handleSendData}
+                disabled={!isGitHubActionsEnabled}
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <List size={20} /> Ver Informações dos Ambientes
+                <Send size={20} /> Send
               </button>
-            )}
+              
+              {isGitHubActionsEnabled && (
+                <button
+                  onClick={showEnvironmentInfo}
+                  className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  <List size={20} /> Ver Informações dos Ambientes
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
