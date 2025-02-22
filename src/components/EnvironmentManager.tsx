@@ -2,38 +2,9 @@ import React, { useState } from 'react';
 import { Plus, X, Eye, EyeOff, Save, Send, Github, List } from 'lucide-react';
 import { toast } from 'sonner';
 import TemplateSearch from './TemplateSearch';
-
-interface KeyValue {
-  key: string;
-  value: string;
-}
-
-interface Environment {
-  name: string;
-  vars: KeyValue[];
-  secrets: KeyValue[];
-}
-
-interface Template {
-  name: string;
-  structure: {
-    [key: string]: {
-      vars: { [key: string]: string };
-      secrets: { [key: string]: string };
-    };
-  };
-}
-
-interface GitHubUser {
-  login: string;
-  name: string;
-  avatar_url: string;
-}
-
-interface APIResponse {
-  statusCode: number;
-  body: any;
-}
+import { Environment, Template, GitHubUser, APIResponse } from '../types/environment';
+import { generateTemplateStructure, generateCurrentStructure, extractEnvironmentInfo } from '../utils/environmentUtils';
+import { validateGitHubPAT, checkRepositoryAccess, sendDataToGitHub } from '../utils/githubUtils';
 
 const EnvironmentManager = () => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -96,34 +67,8 @@ const EnvironmentManager = () => {
     }));
   };
 
-  const generateTemplateStructure = () => {
-    const template: { [key: string]: any } = {};
-    
-    environments.forEach(env => {
-      template[env.name] = {
-        vars: Object.fromEntries(env.vars.map(v => [v.key, ""])),
-        secrets: Object.fromEntries(env.secrets.map(s => [s.key, ""]))
-      };
-    });
-    
-    return template;
-  };
-
-  const generateCurrentStructure = () => {
-    const current: { [key: string]: any } = {};
-    
-    environments.forEach(env => {
-      current[env.name] = {
-        vars: Object.fromEntries(env.vars.map(v => [v.key, v.value])),
-        secrets: Object.fromEntries(env.secrets.map(s => [s.key, s.value]))
-      };
-    });
-    
-    return current;
-  };
-
   const downloadTemplate = () => {
-    const templateStr = JSON.stringify(generateTemplateStructure(), null, 2);
+    const templateStr = JSON.stringify(generateTemplateStructure(environments), null, 2);
     const blob = new Blob([templateStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -140,12 +85,12 @@ const EnvironmentManager = () => {
     const newEnvironments: Environment[] = [];
     
     Object.entries(template.structure).forEach(([envName, envData]) => {
-      const vars: KeyValue[] = Object.entries(envData.vars).map(([key, value]) => ({ 
+      const vars = Object.entries(envData.vars).map(([key, value]) => ({ 
         key, 
         value: value || '' 
       }));
       
-      const secrets: KeyValue[] = Object.keys(envData.secrets).map(key => ({ 
+      const secrets = Object.keys(envData.secrets).map(key => ({ 
         key, 
         value: '' 
       }));
@@ -161,7 +106,15 @@ const EnvironmentManager = () => {
     toast.success('Template applied successfully');
   };
 
-  const sendData = async () => {
+  const handleValidateGitHubPAT = async () => {
+    await validateGitHubPAT(pat, setGithubUser, repository, handleCheckRepositoryAccess);
+  };
+
+  const handleCheckRepositoryAccess = async () => {
+    await checkRepositoryAccess(pat, repository, setHasRepoAccess);
+  };
+
+  const handleSendData = async () => {
     if (!pat) {
       toast.error('Please enter your Personal Access Token');
       return;
@@ -177,117 +130,11 @@ const EnvironmentManager = () => {
       return;
     }
 
-    try {
-      const [owner, repo] = repository.split('/');
-      
-      const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github.v3+json',
-          'Authorization': `Bearer ${pat}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          event_type: 'update_environment',
-          ref: 'main',
-          inputs: {
-            pat: pat,
-            repository: repository,
-            structure: generateCurrentStructure()
-          }
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to trigger GitHub Action');
-      
-      setApiResponse({
-        statusCode: response.status,
-        body: { message: 'GitHub Action triggered successfully' }
-      });
-
-      toast.success('GitHub Action triggered successfully');
-    } catch (error) {
-      toast.error('Failed to trigger GitHub Action');
-      console.error('Error triggering GitHub Action:', error);
-    }
-  };
-
-  const validateGitHubPAT = async () => {
-    if (!pat) return;
-
-    try {
-      const userResponse = await fetch('https://api.github.com/user', {
-        headers: {
-          'Authorization': `Bearer ${pat}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      if (!userResponse.ok) {
-        toast.error('Invalid Personal Access Token');
-        setGithubUser(null);
-        setHasRepoAccess(null);
-        return;
-      }
-
-      const userData = await userResponse.json();
-      setGithubUser({
-        login: userData.login,
-        name: userData.name,
-        avatar_url: userData.avatar_url
-      });
-
-      if (repository) {
-        await checkRepositoryAccess();
-      }
-    } catch (error) {
-      toast.error('Failed to validate GitHub token');
-      console.error('Error validating GitHub token:', error);
-    }
-  };
-
-  const checkRepositoryAccess = async () => {
-    if (!pat || !repository) return;
-
-    try {
-      const [owner, repo] = repository.split('/');
-      const repoResponse = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
-        headers: {
-          'Authorization': `Bearer ${pat}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      const hasAccess = repoResponse.ok;
-      setHasRepoAccess(hasAccess);
-      
-      if (!hasAccess) {
-        toast.error('No access to this repository');
-      } else {
-        toast.success('Repository access verified');
-      }
-    } catch (error) {
-      setHasRepoAccess(false);
-      toast.error('Failed to verify repository access');
-      console.error('Error checking repository access:', error);
-    }
-  };
-
-  const extractEnvironmentInfo = () => {
-    const info: { [key: string]: { vars: { [key: string]: string }, secretKeys: string[] } } = {};
-    
-    environments.forEach(env => {
-      info[env.name] = {
-        vars: Object.fromEntries(env.vars.map(v => [v.key, v.value])),
-        secretKeys: env.secrets.map(s => s.key)
-      };
-    });
-    
-    return info;
+    await sendDataToGitHub(pat, repository, generateCurrentStructure(environments), setApiResponse);
   };
 
   const showEnvironmentInfo = () => {
-    const info = extractEnvironmentInfo();
+    const info = extractEnvironmentInfo(environments);
     toast.info("Informações dos ambientes copiadas para o console");
     console.log("Environment Information:", JSON.stringify(info, null, 2));
   };
@@ -312,7 +159,7 @@ const EnvironmentManager = () => {
                 type="password"
                 value={pat}
                 onChange={(e) => setPat(e.target.value)}
-                onBlur={validateGitHubPAT}
+                onBlur={handleValidateGitHubPAT}
                 placeholder="Enter Personal Access Token (PAT)"
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
               />
@@ -329,7 +176,7 @@ const EnvironmentManager = () => {
                 type="text"
                 value={repository}
                 onChange={(e) => setRepository(e.target.value)}
-                onBlur={checkRepositoryAccess}
+                onBlur={handleCheckRepositoryAccess}
                 placeholder="GitHub Repository (owner/repo)"
                 className={`w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 transition-all ${
                   hasRepoAccess === true 
@@ -348,7 +195,7 @@ const EnvironmentManager = () => {
             </div>
 
             <button
-              onClick={sendData}
+              onClick={handleSendData}
               disabled={!pat || !repository || hasRepoAccess !== true}
               className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -513,13 +360,13 @@ const EnvironmentManager = () => {
           <div className="bg-gray-900 text-white p-6 rounded-xl">
             <h3 className="text-lg font-medium mb-4">Generated Template Structure</h3>
             <pre className="overflow-auto">
-              {JSON.stringify(generateTemplateStructure(), null, 2)}
+              {JSON.stringify(generateTemplateStructure(environments), null, 2)}
             </pre>
           </div>
           <div className="bg-gray-900 text-white p-6 rounded-xl mt-4">
             <h3 className="text-lg font-medium mb-4">Current Data Structure</h3>
             <pre className="overflow-auto">
-              {JSON.stringify(generateCurrentStructure(), null, 2)}
+              {JSON.stringify(generateCurrentStructure(environments), null, 2)}
             </pre>
           </div>
         </div>
