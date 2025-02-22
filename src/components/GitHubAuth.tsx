@@ -35,9 +35,9 @@ const GitHubAuth = ({
   };
 
   return (
-    <div className="mb-8 flex flex-col gap-4 items-center">
-      <div className="flex flex-col gap-4 w-full max-w-md">
-        <div className="flex flex-col gap-2 w-full">
+    <div className="flex w-full items-center justify-center">
+      <div className="w-full max-w-md space-y-4">
+        <div className="w-full">
           <input
             type="password"
             value={pat}
@@ -47,14 +47,14 @@ const GitHubAuth = ({
             className="w-full px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
           />
           {githubUser && (
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
               <img src={githubUser.avatar_url} alt={githubUser.login} className="w-5 h-5 rounded-full" />
               <span>{githubUser.name || githubUser.login}</span>
             </div>
           )}
         </div>
 
-        <div className="flex flex-col gap-2 w-full">
+        <div className="w-full">
           <input
             type="text"
             value={repository}
@@ -70,10 +70,10 @@ const GitHubAuth = ({
             }`}
           />
           {hasRepoAccess === true && (
-            <span className="text-sm text-green-600">Repository access verified</span>
+            <span className="mt-2 block text-sm text-green-600">Repository access verified</span>
           )}
           {hasRepoAccess === false && (
-            <span className="text-sm text-red-600">No access to this repository</span>
+            <span className="mt-2 block text-sm text-red-600">No access to this repository</span>
           )}
         </div>
       </div>
@@ -82,3 +82,4 @@ const GitHubAuth = ({
 };
 
 export default GitHubAuth;
+
