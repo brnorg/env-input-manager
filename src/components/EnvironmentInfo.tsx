@@ -35,6 +35,9 @@ const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => 
                           <span className="font-medium text-gray-700">{variable.name}</span>
                           <span className="text-gray-600">{variable.value}</span>
                         </div>
+                        <span className="text-xs text-gray-400">
+                          Created at: {new Date(variable.created_at).toLocaleDateString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -74,3 +77,4 @@ const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => 
 };
 
 export default EnvironmentInfo;
+
