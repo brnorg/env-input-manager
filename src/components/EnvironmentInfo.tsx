@@ -1,0 +1,57 @@
+
+import React from 'react';
+import { X } from 'lucide-react';
+
+interface EnvironmentInfoProps {
+  environmentInfo: any;
+  onClose: () => void;
+}
+
+const EnvironmentInfo = ({ environmentInfo, onClose }: EnvironmentInfoProps) => {
+  return (
+    <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-medium text-gray-900">Repository Environments</h2>
+        <button
+          onClick={onClose}
+          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-all"
+        >
+          <X size={20} />
+        </button>
+      </div>
+      <div className="grid gap-6">
+        {environmentInfo.environments?.map((env: any) => (
+          <div key={env.name} className="border border-gray-100 rounded-lg p-4">
+            <h3 className="text-xl font-medium text-gray-800 mb-4">{env.name}</h3>
+            
+            <div className="grid gap-4">
+              <div>
+                <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {env.variables?.map((variable: any) => (
+                    <div key={variable.name} className="bg-gray-50 p-2 rounded">
+                      <span className="font-medium">{variable.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {env.secrets?.map((secret: any) => (
+                    <div key={secret.name} className="bg-gray-50 p-2 rounded">
+                      <span className="font-medium">{secret.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default EnvironmentInfo;

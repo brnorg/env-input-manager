@@ -1,10 +1,15 @@
+
 import React, { useState } from 'react';
-import { Plus, X, Eye, EyeOff, Save, Send, Github, List } from 'lucide-react';
+import { Send, Github, List, X } from 'lucide-react';
 import { toast } from 'sonner';
 import TemplateSearch from './TemplateSearch';
+import GitHubAuth from './GitHubAuth';
+import EnvironmentForm from './EnvironmentForm';
+import EnvironmentSection from './EnvironmentSection';
+import EnvironmentInfo from './EnvironmentInfo';
 import { Environment, Template, GitHubUser, APIResponse } from '../types/environment';
-import { generateTemplateStructure, generateCurrentStructure, extractEnvironmentInfo } from '../utils/environmentUtils';
-import { validateGitHubPAT, checkRepositoryAccess, sendDataToGitHub, fetchEnvironmentInfo } from '../utils/githubUtils';
+import { generateTemplateStructure, generateCurrentStructure } from '../utils/environmentUtils';
+import { sendDataToGitHub, fetchEnvironmentInfo } from '../utils/githubUtils';
 
 const EnvironmentManager = () => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -108,14 +113,6 @@ const EnvironmentManager = () => {
     toast.success('Template applied successfully');
   };
 
-  const handleValidateGitHubPAT = async () => {
-    await validateGitHubPAT(pat, setGithubUser, repository, handleCheckRepositoryAccess);
-  };
-
-  const handleCheckRepositoryAccess = async () => {
-    await checkRepositoryAccess(pat, repository, setHasRepoAccess);
-  };
-
   const handleSendData = async () => {
     if (!pat) {
       toast.error('Please enter your Personal Access Token');
@@ -170,136 +167,50 @@ const EnvironmentManager = () => {
             currentStructure={generateTemplateStructure(environments)}
           />
           
-          <div className="flex flex-col gap-4 w-full max-w-md">
-            <div className="flex flex-col gap-2">
-              <input
-                type="password"
-                value={pat}
-                onChange={(e) => setPat(e.target.value)}
-                onBlur={handleValidateGitHubPAT}
-                placeholder="Enter Personal Access Token (PAT)"
-                className="w-full px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-              />
-              {githubUser && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <img src={githubUser.avatar_url} alt={githubUser.login} className="w-5 h-5 rounded-full" />
-                  <span>{githubUser.name || githubUser.login}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <input
-                type="text"
-                value={repository}
-                onChange={(e) => setRepository(e.target.value)}
-                onBlur={handleCheckRepositoryAccess}
-                placeholder="GitHub Repository (owner/repo)"
-                className={`w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 transition-all ${
-                  hasRepoAccess === true 
-                    ? 'border-green-200 focus:ring-green-200' 
-                    : hasRepoAccess === false 
-                    ? 'border-red-200 focus:ring-red-200'
-                    : 'border-gray-200 focus:ring-gray-200'
-                }`}
-              />
-              {hasRepoAccess === true && (
-                <span className="text-sm text-green-600">Repository access verified</span>
-              )}
-              {hasRepoAccess === false && (
-                <span className="text-sm text-red-600">No access to this repository</span>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
+          <GitHubAuth
+            pat={pat}
+            setPat={setPat}
+            repository={repository}
+            setRepository={setRepository}
+            githubUser={githubUser}
+            setGithubUser={setGithubUser}
+            hasRepoAccess={hasRepoAccess}
+            setHasRepoAccess={setHasRepoAccess}
+          />
+          
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={handleSendData}
+              disabled={!isGitHubActionsEnabled}
+              className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send size={20} /> Send
+            </button>
+            
+            {isGitHubActionsEnabled && (
               <button
-                onClick={handleSendData}
-                disabled={!isGitHubActionsEnabled}
-                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={fetchEnvironmentInfoHandler}
+                className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2"
               >
-                <Send size={20} /> Send
+                <List size={20} /> Ver Informações dos Ambientes
               </button>
-              
-              {isGitHubActionsEnabled && (
-                <button
-                  onClick={fetchEnvironmentInfoHandler}
-                  className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors inline-flex items-center justify-center gap-2"
-                >
-                  <List size={20} /> Ver Informações dos Ambientes
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
-        <form onSubmit={addEnvironment} className="mb-12 flex justify-center gap-4">
-          <input
-            type="text"
-            value={newEnvName}
-            onChange={(e) => setNewEnvName(e.target.value)}
-            placeholder="Enter environment name"
-            className="px-4 py-2 border border-gray-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-          />
-          <button
-            type="submit"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            <Plus size={20} /> Add Environment
-          </button>
-          {environments.length > 0 && (
-            <button
-              type="button"
-              onClick={downloadTemplate}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <Save size={20} /> Download Template
-            </button>
-          )}
-        </form>
+        <EnvironmentForm
+          newEnvName={newEnvName}
+          setNewEnvName={setNewEnvName}
+          onAddEnvironment={addEnvironment}
+          onDownloadTemplate={downloadTemplate}
+          hasEnvironments={environments.length > 0}
+        />
 
         {showEnvironmentInfo && environmentInfo && (
-          <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-medium text-gray-900">Repository Environments</h2>
-              <button
-                onClick={() => setShowEnvironmentInfo(false)}
-                className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-all"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="grid gap-6">
-              {environmentInfo.environments?.map((env: any) => (
-                <div key={env.name} className="border border-gray-100 rounded-lg p-4">
-                  <h3 className="text-xl font-medium text-gray-800 mb-4">{env.name}</h3>
-                  
-                  <div className="grid gap-4">
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-700 mb-2">Variables</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {env.variables?.map((variable: any) => (
-                          <div key={variable.name} className="bg-gray-50 p-2 rounded">
-                            <span className="font-medium">{variable.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-lg font-medium text-gray-700 mb-2">Secrets</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        {env.secrets?.map((secret: any) => (
-                          <div key={secret.name} className="bg-gray-50 p-2 rounded">
-                            <span className="font-medium">{secret.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <EnvironmentInfo
+            environmentInfo={environmentInfo}
+            onClose={() => setShowEnvironmentInfo(false)}
+          />
         )}
 
         <div className="grid gap-8 animate-fade-in">
@@ -319,89 +230,27 @@ const EnvironmentManager = () => {
               </div>
 
               <div className="p-6 grid gap-8">
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-700">Variables</h3>
-                    <button
-                      onClick={() => addKeyValue(envIndex, 'vars')}
-                      className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors inline-flex items-center gap-1"
-                    >
-                      <Plus size={16} /> Add Variable
-                    </button>
-                  </div>
-                  <div className="grid gap-3">
-                    {env.vars.map((kv, kvIndex) => (
-                      <div key={kvIndex} className="flex gap-4 items-start animate-fade-in">
-                        <input
-                          type="text"
-                          value={kv.key}
-                          onChange={(e) => updateKeyValue(envIndex, 'vars', kvIndex, 'key', e.target.value)}
-                          placeholder="Key"
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-                        />
-                        <input
-                          type="text"
-                          value={kv.value}
-                          onChange={(e) => updateKeyValue(envIndex, 'vars', kvIndex, 'value', e.target.value)}
-                          placeholder="Value"
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-                        />
-                        <button
-                          onClick={() => removeKeyValue(envIndex, 'vars', kvIndex)}
-                          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-all"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EnvironmentSection
+                  title="Variables"
+                  items={env.vars}
+                  envIndex={envIndex}
+                  type="vars"
+                  onAdd={() => addKeyValue(envIndex, 'vars')}
+                  onUpdate={(kvIndex, field, value) => updateKeyValue(envIndex, 'vars', kvIndex, field, value)}
+                  onRemove={(kvIndex) => removeKeyValue(envIndex, 'vars', kvIndex)}
+                />
 
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-medium text-gray-700">Secrets</h3>
-                      <button
-                        onClick={() => toggleSecretVisibility(env.name)}
-                        className="p-1 text-gray-400 hover:text-gray-600 rounded-full transition-all"
-                      >
-                        {showSecrets[env.name] ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => addKeyValue(envIndex, 'secrets')}
-                      className="text-sm px-3 py-1 bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200 transition-colors inline-flex items-center gap-1"
-                    >
-                      <Plus size={16} /> Add Secret
-                    </button>
-                  </div>
-                  <div className="grid gap-3">
-                    {env.secrets.map((kv, kvIndex) => (
-                      <div key={kvIndex} className="flex gap-4 items-start animate-fade-in">
-                        <input
-                          type="text"
-                          value={kv.key}
-                          onChange={(e) => updateKeyValue(envIndex, 'secrets', kvIndex, 'key', e.target.value)}
-                          placeholder="Key"
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-                        />
-                        <input
-                          type={showSecrets[env.name] ? "text" : "password"}
-                          value={kv.value}
-                          onChange={(e) => updateKeyValue(envIndex, 'secrets', kvIndex, 'value', e.target.value)}
-                          placeholder="Value"
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-200 transition-all"
-                        />
-                        <button
-                          onClick={() => removeKeyValue(envIndex, 'secrets', kvIndex)}
-                          className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-all"
-                        >
-                          <X size={20} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EnvironmentSection
+                  title="Secrets"
+                  items={env.secrets}
+                  envIndex={envIndex}
+                  type="secrets"
+                  showSecrets={showSecrets[env.name]}
+                  onAdd={() => addKeyValue(envIndex, 'secrets')}
+                  onUpdate={(kvIndex, field, value) => updateKeyValue(envIndex, 'secrets', kvIndex, field, value)}
+                  onRemove={(kvIndex) => removeKeyValue(envIndex, 'secrets', kvIndex)}
+                  onToggleVisibility={() => toggleSecretVisibility(env.name)}
+                />
               </div>
             </div>
           ))}
@@ -427,17 +276,6 @@ const EnvironmentManager = () => {
           </div>
         )}
       </div>
-
-      {environments.length > 0 && (
-        <div className="mt-8 max-w-6xl mx-auto">
-          <button
-            onClick={fetchEnvironmentInfoHandler}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <List size={20} /> Ver Informações dos Ambientes
-          </button>
-        </div>
-      )}
     </div>
   );
 };
