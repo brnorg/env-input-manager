@@ -2,41 +2,53 @@
 [
   {
     "name": "Default Template",
+    "description": "A standard environment configuration template with development, staging, and production environments",
+    "version": "1.0.0",
+    "author": "Lovable",
     "structure": {
       "development": {
         "vars": {
-          "API_URL": "https://api.example.com",
-          "APP_NAME": "My App",
-          "DEBUG_MODE": "true"
+          "API_URL": "https://api-dev.example.com",
+          "APP_NAME": "My App (Development)",
+          "DEBUG_MODE": "true",
+          "LOG_LEVEL": "debug",
+          "ENVIRONMENT": "development"
         },
         "secrets": {
           "API_KEY": "",
           "DATABASE_URL": "",
-          "JWT_SECRET": ""
+          "JWT_SECRET": "",
+          "SMTP_PASSWORD": ""
         }
       },
       "staging": {
         "vars": {
-          "API_URL": "https://staging-api.example.com",
+          "API_URL": "https://api-staging.example.com",
           "APP_NAME": "My App (Staging)",
-          "DEBUG_MODE": "false"
+          "DEBUG_MODE": "false",
+          "LOG_LEVEL": "info",
+          "ENVIRONMENT": "staging"
         },
         "secrets": {
           "API_KEY": "",
           "DATABASE_URL": "",
-          "JWT_SECRET": ""
+          "JWT_SECRET": "",
+          "SMTP_PASSWORD": ""
         }
       },
       "production": {
         "vars": {
-          "API_URL": "https://production-api.example.com",
-          "APP_NAME": "My App (Production)",
-          "DEBUG_MODE": "false"
+          "API_URL": "https://api.example.com",
+          "APP_NAME": "My App",
+          "DEBUG_MODE": "false",
+          "LOG_LEVEL": "error",
+          "ENVIRONMENT": "production"
         },
         "secrets": {
           "API_KEY": "",
           "DATABASE_URL": "",
-          "JWT_SECRET": ""
+          "JWT_SECRET": "",
+          "SMTP_PASSWORD": ""
         }
       }
     }
