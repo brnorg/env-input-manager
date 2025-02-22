@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import TemplateSearch from './TemplateSearch';
 import { Environment, Template, GitHubUser, APIResponse } from '../types/environment';
 import { generateTemplateStructure, generateCurrentStructure, extractEnvironmentInfo } from '../utils/environmentUtils';
-import { validateGitHubPAT, checkRepositoryAccess, sendDataToGitHub } from '../utils/githubUtils';
+import { validateGitHubPAT, checkRepositoryAccess, sendDataToGitHub, fetchEnvironmentInfo } from '../utils/githubUtils';
 
 const EnvironmentManager = () => {
   const [environments, setEnvironments] = useState<Environment[]>([]);
@@ -133,10 +133,22 @@ const EnvironmentManager = () => {
     await sendDataToGitHub(pat, repository, generateCurrentStructure(environments), setApiResponse);
   };
 
-  const showEnvironmentInfo = () => {
-    const info = extractEnvironmentInfo(environments);
-    toast.info("Informações dos ambientes copiadas para o console");
-    console.log("Environment Information:", JSON.stringify(info, null, 2));
+  const showEnvironmentInfo = async () => {
+    if (!pat || !repository) {
+      toast.error('Please enter your Personal Access Token and GitHub repository');
+      return;
+    }
+
+    try {
+      const repoInfo = await fetchEnvironmentInfo(pat, repository);
+      if (repoInfo) {
+        toast.success("Environment information fetched successfully");
+        console.log("Repository Environment Information:", repoInfo);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch environment information');
+      console.error('Error:', error);
+    }
   };
 
   return (

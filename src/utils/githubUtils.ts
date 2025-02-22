@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { GitHubUser } from '../types/environment';
 
@@ -109,5 +108,28 @@ export const sendDataToGitHub = async (
   } catch (error) {
     toast.error('Failed to trigger GitHub Action');
     console.error('Error triggering GitHub Action:', error);
+  }
+};
+
+export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
+  try {
+    const [owner, repo] = repository.split('/');
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/.github/environment`, {
+      headers: {
+        'Authorization': `Bearer ${pat}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch environment information');
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    toast.error('Failed to fetch environment information');
+    console.error('Error fetching environment information:', error);
+    return null;
   }
 };
