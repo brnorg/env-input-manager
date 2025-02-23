@@ -103,11 +103,6 @@ export const sendDataToGitHub = async (
       return;
     }
 
-    if (!updateEnvironmentWorkflow.events?.workflow_dispatch) {
-      toast.error('Workflow does not support workflow_dispatch event');
-      return;
-    }
-
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${updateEnvironmentWorkflow.id}/dispatches`, {
       method: 'POST',
       headers: {
