@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { GitHubUser } from '../types/environment';
 
@@ -80,7 +79,36 @@ export const sendDataToGitHub = async (
   try {
     const [owner, repo] = repository.split('/');
     
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
+    const workflowResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/actions/workflows`, 
+      {
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+
+    if (!workflowResponse.ok) {
+      throw new Error('Failed to fetch workflows');
+    }
+
+    const workflows = await workflowResponse.json();
+    const updateEnvironmentWorkflow = workflows.workflows.find(
+      (workflow: any) => workflow.name === 'Update Environment' || workflow.path === '.github/workflows/update-environment.yml'
+    );
+
+    if (!updateEnvironmentWorkflow) {
+      toast.error('update-environment.yml workflow not found');
+      return;
+    }
+
+    if (!updateEnvironmentWorkflow.events?.workflow_dispatch) {
+      toast.error('Workflow does not support workflow_dispatch event');
+      return;
+    }
+
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/${updateEnvironmentWorkflow.id}/dispatches`, {
       method: 'POST',
       headers: {
         'Accept': 'application/vnd.github.v3+json',
@@ -88,17 +116,19 @@ export const sendDataToGitHub = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        event_type: 'update_environment',
         ref: 'main',
         inputs: {
           pat: pat,
           repository: repository,
-          structure: structure
+          structure: JSON.stringify(structure)
         }
       })
     });
 
-    if (!response.ok) throw new Error('Failed to trigger GitHub Action');
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to trigger GitHub Action');
+    }
     
     setApiResponse({
       statusCode: response.status,
@@ -107,8 +137,8 @@ export const sendDataToGitHub = async (
 
     toast.success('GitHub Action triggered successfully');
   } catch (error) {
-    toast.error('Failed to trigger GitHub Action');
     console.error('Error triggering GitHub Action:', error);
+    toast.error(error instanceof Error ? error.message : 'Failed to trigger GitHub Action');
   }
 };
 
@@ -129,7 +159,6 @@ export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
     const data = await response.json();
     console.log('Environments response:', data);
     
-    // Buscar detalhes de cada ambiente
     const environments = await Promise.all(data.environments.map(async (env: any) => {
       console.log(`Fetching details for environment: ${env.name}`);
       
@@ -215,4 +244,3 @@ const fetchEnvironmentSecrets = async (pat: string, owner: string, repo: string,
     return [];
   }
 };
-
