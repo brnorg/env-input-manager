@@ -137,6 +137,64 @@ export const sendDataToGitHub = async (
   }
 };
 
+const createOrUpdateEnvironmentVariable = async (
+  pat: string,
+  owner: string,
+  repo: string,
+  envName: string,
+  varName: string,
+  varValue: string
+) => {
+  try {
+    // Primeiro tenta criar a variável com POST
+    let response = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/variables`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${pat}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: varName,
+          value: varValue
+        })
+      }
+    );
+
+    // Se receber erro 409 (conflito), tenta atualizar com PATCH
+    if (response.status === 409) {
+      console.log(`Variable ${varName} already exists, updating with PATCH...`);
+      response = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/environments/${envName}/variables/${varName}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${pat}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: varName,
+            value: varValue
+          })
+        }
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to ${response.status === 409 ? 'update' : 'create'} variable ${varName}`);
+    }
+
+    console.log(`Successfully ${response.status === 200 ? 'updated' : 'created'} variable ${varName}`);
+    return true;
+  } catch (error) {
+    console.error(`Error handling variable ${varName}:`, error);
+    throw error;
+  }
+};
+
 export const fetchEnvironmentInfo = async (pat: string, repository: string) => {
   try {
     const [owner, repo] = repository.split('/');
